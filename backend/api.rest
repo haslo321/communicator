@@ -74,12 +74,12 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:5000/auth/countNew
+POST http://localhost:5000/socket/countNew
 Content-Type: application/json
 
 {
     "data": {
-        "userId": "63ed7797e8a812af71c1e987"
+        "userId": "63ee697a9fe7661e87707236"
     }
 }
 

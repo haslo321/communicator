@@ -18,7 +18,6 @@ const socketRoute = require('./routes/socket');
 
 app.use('/auth', authRoute);
 app.use('/data', userDataRoute);
-
 // app.use('/socket', socketRoute);
 
 const server = http.createServer(app);

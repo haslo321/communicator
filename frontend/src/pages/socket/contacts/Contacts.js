@@ -2,28 +2,45 @@ import styles from './Contacts.module.css';
 import { useState, useEffect } from 'react';
 import axios from '../../../api/axios';
 import { Navigate, Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import useAuth from '../../../hooks/auth';
 import Sidebar from "../../../components/Sidebar"
 const Contacts = () => {
 
+    const dispatch = useDispatch();
+
     const user = useSelector(state => state.user)
+    const not = useSelector((state) => state.not)
     const [unvalid, setUnvalid] = useState(false);
     const [loading, setLoading] = useState(false);
     const [contacts, setContacts] = useState([]);
+    const [chatRoom, setChatRoom] = useState(false);
+    const [chatLink, setChatLink] = useState(null);
     const changeLocationToLogin = <Navigate replace={true} to={`/login`} />
-    const {id: userIdUse} = user;
+    const { id: userIdUse } = user;
 
     const [authData, authErr] = useAuth(setUnvalid);
 
-    useEffect(() => {
+    const chatCheckClickHandler = (chatId, newMessage) => {
+        if (newMessage) {
+            dispatch({ type: 'notDec', not: newMessage })
+        }
+        setChatLink(<Navigate to={`/contacts/${chatId}`} />);
+    }
 
+    useEffect(() => {
+        if (chatLink) {
+            setChatRoom(true);
+        }
+    }, [chatLink])
+
+    //pobieranie czatów po załodowaniu danych użytkownika
+
+    useEffect(() => {
         const auth = async () => {
 
-            //pobieranie czatów użytkownika
-
             try {
-                if(userIdUse){
+                if (userIdUse) {
                     const showResponse = await axios.post('data/showAll', {
                         data: {
                             userId: userIdUse
@@ -43,43 +60,79 @@ const Contacts = () => {
 
     }, [userIdUse])
 
+    //pobieranie czatów w pętli
+
+    useEffect(() => {
+
+        let interval;
+
+        if (userIdUse) {
+            interval = setInterval(async () => {
+
+                try {
+                    if (userIdUse) {
+                        const showResponse = await axios.post('data/showAll', {
+                            data: {
+                                userId: userIdUse
+                            }
+                        })
+                        setContacts(showResponse.data);
+                        setLoading(true)
+                    }
+                }
+                catch (err) {
+                    console.log(err);
+                    return null;
+                }
+
+            }, 2000);
+        }
+
+        return () => {
+
+            if (interval !== undefined) {
+                clearInterval(interval);
+            }
+        }
+
+    }, [userIdUse])
+
 
     return (
         <div className={styles.theme}>
-            <Sidebar selected="contacts"></Sidebar>
+            <Sidebar notification={not} selected="contacts"></Sidebar>
+            {chatRoom && chatLink}
             {unvalid && changeLocationToLogin}
             <div className={styles.contacts}>
-                { (contacts.length != 0 && loading ) ? (contacts.map(contact => {
+                {(contacts.length != 0 && loading) ? (contacts.map(contact => {
 
                     if (!contact.message.message) {
                         return null;
                     }
 
                     return (
-                        <Link key={contact.roomId} className={styles.links} to={`/contacts/${contact.roomId}`}>
-                            <div className={styles.cloud}>
+                        <div className={styles.cloud} key={contact.roomId} onClick={() => chatCheckClickHandler(contact.roomId, contact.messages)}>
 
-                                {contact.messages != 0 ?
-                                    (
-                                        <div className={styles.notification}>
-                                            {contact.messages}
-                                        </div>
-                                    )
-                                    : null
-                                }
+                            {contact.messages != 0 ?
+                                (
+                                    <div className={styles.notification}>
+                                        {contact.messages}
+                                    </div>
+                                )
+                                : null
+                            }
 
-                                <div className={styles.profileContainer}>
-                                    <img src={contact.users[0].profile}></img>
-                                </div>
-                                <div className={styles.cloudContainer}>
-                                    <div className={styles.username}>{contact.users[0].username}</div>
-                                    <div className={styles.message}>{contact.message.username}: {contact.message.message}</div>
-                                </div>
+                            <div className={styles.profileContainer}>
+                                <img src={contact.users[0].profile}></img>
                             </div>
-                        </Link>
+                            <div className={styles.cloudContainer}>
+                                <div className={styles.username}>{contact.users[0].username}</div>
+                                <div className={styles.message}>{contact.message.username}: {contact.message.message}</div>
+                            </div>
+                        </div>
                     )
                 })) : null}
-                 { (contacts.length == 0 && loading ) ? (<div className={styles.noChats}>No chats available</div>) : null}
+                {(contacts.length == 0 && loading) ? (<div className={styles.noChats}>No chats available</div>) : null}
             </div>
         </div>
     )

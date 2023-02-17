@@ -9,6 +9,7 @@ import { SearchSVG } from '../../../assets/svg/navigate';
 const Contacts = () => {
 
     const user = useSelector(state => state.user)
+    const not = useSelector((state) => state.not)
     const {id: userIdUse} = user;
     const [persons, setPersons] = useState([]);
     const [personRoom, setPersonRoom] = useState(false);
@@ -81,7 +82,7 @@ const Contacts = () => {
         <div className={styles.theme}>
             {personRoom && personLink}
             {unvalid && changeLocationToLogin}
-            <Sidebar selected="persons" />
+            <Sidebar notification={not} selected="persons" />
 
             <div className={styles.personList}>
                 <form>
@@ -100,11 +101,7 @@ const Contacts = () => {
                         </div>
                     })}
                 </div>
-
             </div>
-
-
-
         </div>
     )
 }

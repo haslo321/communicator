@@ -1,4 +1,5 @@
 
+const prisma = require("../prisma/index");
 
 module.exports.show = (req, res) => {
     prisma.chats.aggregateRaw({

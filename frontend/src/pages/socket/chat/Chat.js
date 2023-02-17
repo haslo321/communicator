@@ -1,17 +1,21 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
+
 import useAuth from '../../../hooks/auth';
 import { Navigate, Link } from 'react-router-dom';
 import styles from './Chat.module.css'
 import Sidebar from "../../../components/Sidebar"
 import axios from "../../../api/axios";
 import { SendSVG } from '../../../assets/svg/navigate';
+import { useDispatch, useSelector } from 'react-redux';
+
 const Chat = () => {
 
-
-    const user = useSelector(state => state.user)
-    const socket = useSelector(state => state.socket)
+    const dispatch = useDispatch();
+    
+    const user = useSelector((state) => state.user)
+    const socket = useSelector((state) => state.socket)
+    const not = useSelector((state) => state.not)
     const { id } = useParams()
     const [message, setMessage] = useState("");
     const [conversation, setConversation] = useState([]);
@@ -22,8 +26,9 @@ const Chat = () => {
     const [shift, setShift] = useState(false);
     const [authData, authErr] = useAuth(setUnvalid);
     const [roomData, setRoomData] = useState([]);
-    const [notification, setNotification] = useState(0);
     const {id: userIdUse} = user;
+
+   
 
     useEffect(() => {
         // pobieranie danych czatu i jego użytkowników
@@ -48,29 +53,6 @@ const Chat = () => {
         }
 
         auth();
-
-    }, [userIdUse])
-
-
-    // pobieranie liczby nieprzeczytanych wiadomości
-
-    useEffect(() => {
-        
-        let interval;
-
-        if (userIdUse) {
-            socket.emit("notification", { userId: user.id });
-            interval = setInterval(() => {
-                socket.emit("notification", { userId: user.id });
-            }, 2000);
-        }
-
-
-        return () => {
-            if (interval !== undefined) {
-                clearInterval(interval);
-            }
-        }
 
     }, [userIdUse])
 
@@ -147,7 +129,6 @@ const Chat = () => {
         if (event) {
             event.preventDefault();
         }
-        console.log(message)
         const data = {
             message: message,
             roomId: id,
@@ -167,7 +148,6 @@ const Chat = () => {
 
 
     /////////
-
 
     //dołączanie do czatu
 
@@ -200,22 +180,8 @@ const Chat = () => {
 
             });
 
-            //ilość nieprzeczytanych wiadomości
-
-            socket.on("count", (data) => {
-
-                if (data.length) {
-                    setNotification(data[0].notification);
-                }
-                else {
-                    setNotification(0);
-                }
-
-            })
-
             return () => {
                 socket.off('receive_message');
-                socket.off('count');
             };
         }
 
@@ -224,7 +190,7 @@ const Chat = () => {
     return (
         <div className={styles.theme}>
             {unvalid && changeLocationToLogin}
-            <Sidebar notification={notification} />
+            <Sidebar notification={not} />
 
             <div className={styles.onMessages}>
 
@@ -245,7 +211,7 @@ const Chat = () => {
                     })}
 
                 </div>
-
+                
                 <form className={styles.newMessage} onSubmit={sendMessageSubmitHandler}>
                     <textarea onKeyDown={sendMessageByEnter} onKeyUp={removeEnter} onInput={textareaHeigthAdjust} ></textarea>
                     <label htmlFor="send" className={styles.submitButton}>
@@ -254,11 +220,9 @@ const Chat = () => {
                             <SendSVG />
                         </div>
                     </label>
-
+                  
                 </form>
             </div>
-
-
         </div>
     )
 }
